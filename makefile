@@ -8,7 +8,7 @@ pull-latest-images:
 set-env-variables:
 	echo Edit the appropriate environment file for your instance type, envfile.local.txt or envfile.server.txt, filling in all mandatory variables, and optional variables as needed. && echo After doing this, run 'make setup-2'.
 
-setup:
+setup1:
 	make setup-info-echo && make setup-deploy-local && make pull-latest-images && set-env-variables
 
 # Setup, part 2
@@ -28,6 +28,9 @@ serve-in-background:
 setup2:
 #	make build && make temp-bugfix-echo && make temp-bugfix && make echo-open-url-command && make serve
 	make build && make echo-open-url-command && make serve-first-time
+
+setup:
+	make setup1 && make setup2
 
 # Daily development
 get-ips:

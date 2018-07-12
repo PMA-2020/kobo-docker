@@ -1,18 +1,39 @@
-# WARNING
+# PMA2020 Implementation Docs
+## First time setup
+These steps can be followed to set up Kobo-Docker locally on OS X.
+
+1. Install [Docker for Mac](https://docs.docker.com/docker-for-mac/) and make sure it is running.
+2. In the terminal, navigate to where you want to clone the project. Then run: `git clone https://github.com/joeflack4/kobo-docker.git && cd kobo-docker`
+3. Run `make get-ips`
+4. Set the `HOST_ADDRESS` variable of `envfile.local.txt` to the IP that shows as a result of step (1). If multiple IP addresses show up, try the first one and continue with the rest of this setup. If you get to the end and get error code 400 in the browser, repeat this whole process, trying the other IPs shown one at a time.
+5. Run `make setup`
+6. A lot of tasks will run. This could take 10-30 minutes. After waiting quite awhile, once the text `enketo_express_1  | 20:49:19 0|enketo   | Worker 2 ready for duty at port 8005! (environment: production)` appears, try accessing `http://${HOST_ADDRESS}:${KPI_PUBLIC_PORT}` (substituting in the values entered in [`envfile.local.txt`](./envfile.local.txt)).
+7. After confirming that the app is loading correctly, it is probably a good idea to change some of the values inside the `envfile.local.txt` to something private.
+
+## Common tasks
+### Starting the server
+`make start`
+### Checking server status and logs
+At the top right of OS X toolbar, click the docker icon. Then click "Kinematic", which is the GUI for Docker. Pressing Cmd+R will refresh the screen.
+### Stopping the server
+`make stop`
+
+# Original Kobo-Docker Docs
+## WARNING
 If you started running KoBo Toolbox using a version of `kobo-docker` from before to [2016.10.13](https://github.com/kobotoolbox/kobo-docker/commit/316b1464c86e2c447ca88c10d383662b4f2e4ac6), actions that recreate the `kobocat` container (including `docker-compose up ...` under some circumstances) will result in losing access to user media files (e.g. responses to photo questions). Safely stored media files can be found in `kobo-docker/.vols/kobocat_media_uploads/`.
 
 Files that were not safely stored can be found inside Docker volumes as well as in your current and any previous `kobocat` containers. One quick way of finding these is directly searching the Docker root directory. The root directory can be found by running `docker info` and looking for the "Docker Root Dir" entry (not to be confused with the storage driver's plain "Root Dir").
 
 Once this is noted, you can `docker-compose stop` and search for potentially-missed media attachment directories with something like `sudo find ${YOUR_DOCKER_ROOT_DIR}/ -name attachments`. These attachment directories will be of the format `.../${SOME_KOBO_USER}/attachments` and you will want to back up each entire KoBo user's directory (the parent of the `attachments` directory) for safe keeping, then move/merge them under `.vols/kobocat_media_uploads/`, creating that directory if it doesn't exist and taking care not to overwrite any newer files present there if it does exist. Once this is done, clear out the old container and any attached volumes with `docker-compose rm -v kobocat`, then `git pull` the latest `kobo-docker` code, `docker-compose pull` the latest images for `kobocat` and the rest, and your media files will be safely stored from there on.
 
-# kobo-docker
+## kobo-docker
 
 `kobo-docker` is used to run a copy of the [KoBo Toolbox](http://www.kobotoolbox.org) survey data collection platform on a machine of your choosing. It relies on [Docker](https://docker.com) to separate the different parts of KoBo into different containers (which can be thought of as lighter-weight virtual machines) and [Docker Compose](https://docs.docker.com/compose/) to configure, run, and connect those containers. Below is a diagram (made with [Lucidchart](lucidchart.com)) of the containers that make up a running `kobo-docker` system and their connections:
 ![Container diagram](./doc/Container_diagram.png)
 
 
 
-# Setup procedure:
+## Setup procedure:
 
 1. The first decision to make is whether your `kobo-docker` instance will use secure (**HTTPS**) or insecure (plain **HTTP**) communications when interacting with clients. While secure communications are obviously desirable, the requirements imposed by the public key cryptographic system underpinning HTTPS add a considerable degree of complexity to the initial setup (we are in the process of eventually simplifying this with [`letsencrypt`](https://letsencrypt.org/)). In contrast, setups using plain HTTP can be suitable in some cases where security threats are unlikely, such as for use strictly within a secure private network. To emphasize the difference between the two types of setup, they are referred to herein as **server** (HTTPS) and **local** (HTTP).
 
@@ -52,7 +73,7 @@ Please run the following command inside your kobo-docker folder:
 
 "Local" setup users can now reach KoBo Toolbox at `http://${HOST_ADDRESS}:${KPI_PUBLIC_PORT}` (substituting in the values entered in [`envfile.local.txt`](./envfile.local.txt)), while "server" setups can be reached at `https://${KOBOFORM_PUBLIC_SUBDOMAIN}.${PUBLIC_DOMAIN_NAME}` (similarly substituting from [`envfile.server.txt`](./envfile.server.txt)). Be sure to periodically update your containers, especially `nginx`, for security updates by pulling new changes from this `kobo-docker` repo then running e.g. `docker-compose pull && docker-compose up -d`.
 
-# Backups
+## Backups
 Automatic, periodic backups of KoBoCAT media, MongoDB, and Postgres can be individually enabled by uncommenting (and optionally customizing) the `*_BACKUP_SCHEDULE` variables in your `envfile`. When enabled, timestamped backups will be placed in `backups/kobocat`, `backups/mongo`, and `backups/postgres`, respectively. Redis backups are currently not generated, but the `redis_main` DB file is updated every 5 minutes and can always be found in `.vols/redis_main_data/`.
 
 Backups can also be manually triggered when `kobo-docker` is running by executing the the following commands:
@@ -62,14 +83,14 @@ docker exec -it kobodocker_mongo_1 /srv/backup_mongo.bash
 docker exec -it kobodocker_postgres_1 /srv/backup_postgres.bash
 ```
 
-# Troubleshooting
+## Troubleshooting
 
-## Basic troubleshooting
+### Basic troubleshooting
 You can confirm that your containers are running with `docker ps`. To inspect the log output from the containers, execute `docker-compose logs -f` or for a specific container use e.g. `docker-compose logs -f redis_main`.
 
 The documentation for Docker can be found at https://docs.docker.com.
 
-## Django debugging
+### Django debugging
 Developers can use [PyDev](http://www.pydev.org/)'s [remote, graphical Python debugger](http://www.pydev.org/manual_adv_remote_debugger.html) to debug Python/Django code. To enable for the `kpi` container:
 
 1. Specify the mapping(s) between target Python source/library paths on the debugging machine to the locations of those files/directories inside the container by customizing and uncommenting the `KPI_PATH_FROM_ECLIPSE_TO_PYTHON_PAIRS` variable in [`envfiles/kpi.txt`](./envfiles/kpi.txt).
