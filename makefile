@@ -1,3 +1,4 @@
+# Setup, part 1
 setup-info-echo:
 	echo Setting up locally.
 setup-deploy-local:
@@ -10,6 +11,7 @@ set-env-variables:
 setup:
 	make setup-info-echo && make setup-deploy-local && make pull-latest-images && set-env-variables
 
+# Setup, part 2
 build:
 	docker-compose build
 temp-bugfix-echo:
@@ -18,11 +20,22 @@ temp-bugfix:
 	docker-compose exec kobocat chown -R wsgi /srv/src/kobocat
 echo-open-url-command:
 	echo After server starts, run the following command to get the URL to open in the browser: "ip=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | cut -d\  -f2 | head -n1 | awk '{print "http://"$1":8000"}') && open ${ip}"
-serve:
+serve-first-time:
 	make pull-latest-images && docker-compose up
 serve-in-background:
 	make pull-latest-images && docker-compose up -d
 
 setup2:
 #	make build && make temp-bugfix-echo && make temp-bugfix && make echo-open-url-command && make serve
-	make build && make echo-open-url-command && make serve
+	make build && make echo-open-url-command && make serve-first-time
+
+# Daily development
+get-ips:
+#	echo Run the following command: && ifconfig | grep "inet " | grep -v 127.0.0.1 | cut -d\  -f2
+	ifconfig | grep "inet " | grep -v 127.0.0.1 | cut -d\  -f2
+serve:
+	docker-compose start
+start:
+	make serve
+stop:
+	docker-compose stop
